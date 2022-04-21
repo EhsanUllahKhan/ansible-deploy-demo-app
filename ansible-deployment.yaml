@@ -1,0 +1,45 @@
+- hosts: webservers
+  gather_facts: yes
+  become_user: root
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        force_apt_get: yes
+        upgrade: yes
+
+    - name: Check if ansible-deployment directory exists
+      stat:
+        path: /root/wanclouds/ansible-deployment
+      register: output_folder
+
+    - name: Create directory if not exists
+      file:
+        path: /root/wanclouds/ansible-deployment
+        state: directory
+        owner: root
+        group: root
+        mode: 0775
+      when: output_folder.stat.exists == false
+
+    - name: Check if ansible-deployment directory exists
+      stat:
+        path: /root/wanclouds/ansible-deployment
+      register: verification
+
+    - name: copy dev folder to webserver
+      copy:
+        src: /home/ehsan/Desktop/Wanclouds/ansible-deploy-demo-app/dev
+        dest: /root/wanclouds/ansible-deployment
+        owner: root
+        mode: 600
+      when: verification.stat.exists == true
+
+    - name: Execute the script
+      script: /home/ehsan/Desktop/Wanclouds/ansible-deploy-demo-app/dev/script.sh
+      register: console
+
+    - debug: msg="{{ console.stdout }}"
+
+    - debug: msg="{{ console.stderr }}"
